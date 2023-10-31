@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:zipatala/model/facility.dart';
 
 class Home extends StatefulWidget {
   const Home({Key? key}) : super(key: key);
@@ -8,12 +11,41 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
+  late List<Facility> facilities = [];
+
+  Future<void> fetchData() async {
+    final response = await http.get(Uri.parse(
+        'https://c68d-137-64-0-28.ngrok-free.app/api/v1/facilities'));
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = json.decode(response.body);
+      print('API Response: $data'); // Print API response
+      setState(() {
+        facilities = data.map((json) => Facility.fromJson(json)).toList();
+      });
+    } else {
+      print('Failed to load facilities. Status code: ${response.statusCode}');
+      throw Exception('Failed to load facilities');
+    }
+    print('Facilities Length: ${facilities.length}');
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    fetchData();
+    print('object');
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.blue,
-        title: Text('Luke International', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),),
+        title: Text(
+          'Luke International',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+        ),
         centerTitle: true,
       ),
       body: SingleChildScrollView(
@@ -82,49 +114,50 @@ class _HomeState extends State<Home> {
                   ),
                 ],
               ),
-              SizedBox(
-                  height:
-                      16.0), // Adding space between the row and the ListView
-              ListView(
-                shrinkWrap:
-                    true, // Ensures that ListView takes only the space it needs
-                children: <Widget>[
-                  ListTile(
-                    title: Text(
-                      'Facility A',
-                      style: TextStyle(
-                        fontSize: 16.0,
-                        fontWeight: FontWeight.bold,
-                      ),
+              SizedBox(height: 16.0),
+              // Adding space between the row and the ListView
+              facilities == null || facilities.isEmpty
+                  ? Center(child: CircularProgressIndicator())
+                  : ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: facilities.length,
+                      itemBuilder: (context, index) {
+                        final facility = facilities[index];
+                        return ListTile(
+                          title: Text(
+                            facility.facilityName,
+                            style: TextStyle(
+                              fontSize: 16.0,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          subtitle: Text(
+                            facility.facilityCode,
+                            style: TextStyle(
+                              fontSize: 14.0,
+                              color: Colors.grey,
+                            ),
+                          ),
+                          leading: CircleAvatar(
+                            radius: 20.0,
+                            backgroundColor: Colors.blue,
+                            child: Icon(
+                              Icons.local_hospital,
+                              color: Colors.white,
+                              size: 20.0,
+                            ),
+                          ),
+                          trailing: Icon(
+                            Icons.arrow_circle_right,
+                            color: Colors.blue,
+                            size: 30.0,
+                          ),
+                          onTap: () {
+                            // Handle tap on the ListTile
+                          },
+                        );
+                      },
                     ),
-                    subtitle: Text(
-                      'Location',
-                      style: TextStyle(
-                        fontSize: 14.0,
-                        color: Colors.grey,
-                      ),
-                    ),
-                    leading: CircleAvatar(
-                      radius: 20.0,
-                      backgroundColor:
-                          Colors.blue, // Color of the circle avatar
-                      child: Icon(
-                        Icons.local_hospital, // Icon inside the circle avatar
-                        color: Colors.white, // Color of the icon
-                        size: 20.0, // Size of the icon
-                      ),
-                    ),
-                    trailing: Icon(
-                      Icons.arrow_circle_right, // Trailing icon
-                      color: Colors.blue, // Color of the trailing icon
-                      size: 30.0, // Size of the trailing icon
-                    ),
-                    onTap: () {
-                      // Handle tap on the ListTile
-                    },
-                  ),
-                ],
-              ),
             ],
           ),
         ),
